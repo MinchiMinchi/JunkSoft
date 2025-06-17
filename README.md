@@ -17,4 +17,4 @@
   <dd>目玉がウィンドウ内のマウスカーソルを追いかける（JavaScript）</dd>
 
 * lifegame.py
-<dd>ライフゲーム（Python）</dd>
+  <dd>ライフゲーム（Python）</dd>
