@@ -18,3 +18,6 @@
 
 * lifegame.py
   <dd>ライフゲーム（Python）</dd>
+
+* lifegame.html
+  <dd>ライフゲーム（JavaScript）</dd>
