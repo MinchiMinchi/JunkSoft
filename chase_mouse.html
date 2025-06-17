@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Mouse Follower</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background-color: #f9f9f9;
+      overflow: hidden;
+    }
+    .mouse {
+      position: absolute;
+      font-size: 48px;
+      transition: transform 0.1s linear;
+    }
+  </style>
+</head>
+<body>
+  <div class="mouse" id="mouse">🐭</div>
+
+  <script>
+    const mouse = document.getElementById("mouse");
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let targetX = x;
+    let targetY = y;
+
+    document.addEventListener("mousemove", (e) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+    });
+
+    function animate() {
+      // 線形補間で滑らかに追従
+      x += (targetX - x) * 0.1;
+      y += (targetY - y) * 0.1;
+      mouse.style.transform = `translate(${x}px, ${y}px)`;
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

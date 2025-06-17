@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>xeyes in JavaScript</title>
+  <style>
+    body {
+      background: #f0f0f0;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .eye {
+      width: 100px;
+      height: 100px;
+      background: white;
+      border: 4px solid black;
+      border-radius: 50%;
+      margin: 20px;
+      position: relative;
+    }
+    .pupil {
+      width: 30px;
+      height: 30px;
+      background: black;
+      border-radius: 50%;
+      position: absolute;
+      top: 35px;
+      left: 35px;
+      transition: all 0.05s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="eye"><div class="pupil"></div></div>
+  <div class="eye"><div class="pupil"></div></div>
+
+  <script>
+    const eyes = document.querySelectorAll(".eye");
+    const pupils = document.querySelectorAll(".pupil");
+
+    document.addEventListener("mousemove", (e) => {
+      const { clientX: x, clientY: y } = e;
+
+      eyes.forEach((eye, i) => {
+        const rect = eye.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const angle = Math.atan2(dy, dx);
+        const radius = 20;  // 瞳が動ける半径
+
+        const px = radius * Math.cos(angle);
+        const py = radius * Math.sin(angle);
+
+        pupils[i].style.left = `${35 + px}px`;
+        pupils[i].style.top = `${35 + py}px`;
+      });
+    });
+  </script>
+</body>
+</html>
