@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simple Draw App (JS)</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #toolbar {
+      background: #eee;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+    }
+    #toolbar button {
+      margin-right: 5px;
+      padding: 5px 10px;
+    }
+    #canvasContainer {
+      position: relative;
+    }
+    canvas {
+      display: block;
+      background: #fff;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toolbar">
+    <button data-tool="line">線</button>
+    <button data-tool="rect">四角形</button>
+    <button data-tool="oval">円/楕円</button>
+    <button data-tool="triangle">三角形</button>
+    <button id="clearBtn">クリア</button>
+  </div>
+  <div id="canvasContainer">
+    <canvas id="drawCanvas"></canvas>
+  </div>
+
+  <script>
+    // セットアップ
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight - toolbar.offsetHeight;
+      redraw();
+    }
+    const toolbar = document.getElementById('toolbar');
+    window.addEventListener('resize', resizeCanvas);
+
+    // 描画データ
+    const shapes = [];
+    let currentTool = 'line';
+    let startX = 0, startY = 0;
+    let isDrawing = false;
+
+    // 三角形用
+    let triPoints = [];
+
+    // ツール選択
+    toolbar.addEventListener('click', e => {
+      if (e.target.dataset && e.target.dataset.tool) {
+        currentTool = e.target.dataset.tool;
+        triPoints = [];
+      }
+    });
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      shapes.length = 0;
+      triPoints = [];
+      redraw();
+    });
+
+    // マウス操作
+    canvas.addEventListener('mousedown', e => {
+      if (currentTool !== 'triangle') {
+        isDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+      }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      redraw();
+      drawPreview(currentTool, startX, startY, x, y);
+    });
+
+    canvas.addEventListener('mouseup', e => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      shapes.push({ tool: currentTool, x1: startX, y1: startY, x2: x, y2: y });
+      redraw();
+    });
+
+    // 三角形クリック：3点で確定
+    canvas.addEventListener('click', e => {
+      if (currentTool !== 'triangle') return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      triPoints.push({ x, y });
+      if (triPoints.length === 3) {
+        shapes.push({ tool: 'triangle', points: triPoints.slice() });
+        triPoints = [];
+      }
+      redraw();
+    });
+
+    // 全描画／再描画
+    function redraw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      shapes.forEach(s => {
+        switch (s.tool) {
+          case 'rect':
+            ctx.strokeRect(s.x1, s.y1, s.x2 - s.x1, s.y2 - s.y1);
+            break;
+          case 'oval':
+            drawEllipse(s.x1, s.y1, s.x2, s.y2);
+            break;
+          case 'line':
+            ctx.beginPath();
+            ctx.moveTo(s.x1, s.y1);
+            ctx.lineTo(s.x2, s.y2);
+            ctx.stroke();
+            break;
+          case 'triangle':
+            ctx.beginPath();
+            ctx.moveTo(s.points[0].x, s.points[0].y);
+            ctx.lineTo(s.points[1].x, s.points[1].y);
+            ctx.lineTo(s.points[2].x, s.points[2].y);
+            ctx.closePath();
+            ctx.stroke();
+            break;
+        }
+      });
+      // 三角形プレビュー点・線
+      if (triPoints.length > 0) {
+        ctx.fillStyle = 'red';
+        triPoints.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        if (triPoints.length === 2) {
+          ctx.beginPath();
+          ctx.moveTo(triPoints[0].x, triPoints[0].y);
+          ctx.lineTo(triPoints[1].x, triPoints[1].y);
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+    }
+
+    // プレビュー描画
+    function drawPreview(tool, x1, y1, x2, y2) {
+      ctx.strokeStyle = 'gray';
+      ctx.setLineDash([5,5]);
+      switch (tool) {
+        case 'rect':
+          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+          break;
+        case 'oval':
+          drawEllipse(x1, y1, x2, y2);
+          break;
+        case 'line':
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+          break;
+      }
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'black';
+    }
+
+    // 矩形囲みの楕円描画
+    function drawEllipse(x1, y1, x2, y2) {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const rx = Math.abs(x2 - x1) / 2;
+      const ry = Math.abs(y2 - y1) / 2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // 初期化
+    resizeCanvas();
+  </script>
+
+</body>
+</html>
