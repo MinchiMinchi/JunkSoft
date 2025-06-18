@@ -21,3 +21,9 @@
 
 * lifegame.html
   <dd>ライフゲーム（JavaScript）</dd>
+
+* simpleDraw.py
+  <dd>なんちゃってドローツール（Python）</dd>
+
+* simpleDraw.html
+  <dd>なんちゃってドローツール（JavaScript）</dd>
