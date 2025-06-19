@@ -27,3 +27,9 @@
 
 * simpleDraw.html
   <dd>なんちゃってドローツール（JavaScript）</dd>
+
+* koch_curve.py
+  <dd>コッホ曲線を描画．矩形で拡大表示できます（Python）</dd>
+
+* koch_curve.html
+  <dd>コッホ曲線を描画．矩形で拡大表示できます（JavaScript）</dd>
