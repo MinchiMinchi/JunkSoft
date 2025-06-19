@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Koch Curve Zoom (JS)</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; text-align: center; }
+    #controls { padding: 10px; background: #f0f0f0; }
+    #controls label { margin-right: 10px; }
+    #controls input[type=range] { vertical-align: middle; }
+    #canvasContainer { display: inline-block; position: relative; }
+    canvas { background: #fff; cursor: crosshair; }
+  </style>
+</head>
+<body>
+
+  <div id="controls">
+    <label for="depthRange">Depth: <span id="depthValue">5</span></label>
+    <input type="range" id="depthRange" min="0" max="8" value="5" />
+    <button id="resetBtn">Reset View</button>
+  </div>
+
+  <div id="canvasContainer">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script>
+    const size = 800;
+    let depth = 5;
+    let basePoints = [];
+    // viewRect in base-coordinate space
+    let viewRect = { xmin: 0, xmax: size, ymin: 0, ymax: size };
+
+    const canvas = document.getElementById('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Generate Koch curve points between p1 and p2 at given depth
+    function koch(p1, p2, d) {
+      if (d === 0) return [p1, p2];
+      const x1 = p1.x, y1 = p1.y;
+      const x5 = p2.x, y5 = p2.y;
+      const x2 = (2*x1 + x5)/3, y2 = (2*y1 + y5)/3;
+      const x4 = (x1 + 2*x5)/3, y4 = (y1 + 2*y5)/3;
+      const ux = x4 - x2, uy = y4 - y2;
+      const ang = Math.PI/3;
+      const x3 = x2 + ux*Math.cos(ang) - uy*Math.sin(ang);
+      const y3 = y2 + ux*Math.sin(ang) + uy*Math.cos(ang);
+
+      const segs = [
+        [p1, {x:x2,y:y2}],
+        [{x:x2,y:y2}, {x:x3,y:y3}],
+        [{x:x3,y:y3}, {x:x4,y:y4}],
+        [{x:x4,y:y4}, p2]
+      ];
+      let pts = [];
+      for (let [a,b] of segs) {
+        const sub = koch(a,b,d-1);
+        if (pts.length) sub.shift();
+        pts = pts.concat(sub);
+      }
+      return pts;
+    }
+
+    function generateBase() {
+      basePoints = koch({x:0,y:size/2}, {x:size,y:size/2}, depth);
+    }
+
+    function drawCurve(previewRect=null) {
+      ctx.clearRect(0, 0, size, size);
+      const { xmin, xmax, ymin, ymax } = viewRect;
+      const w = xmax - xmin, h = ymax - ymin;
+      ctx.beginPath();
+      for (let i = 0; i < basePoints.length - 1; i++) {
+        const p = basePoints[i], q = basePoints[i+1];
+        // only draw segment if both endpoints inside viewRect
+        if (p.x >= xmin && p.x <= xmax && p.y >= ymin && p.y <= ymax &&
+            q.x >= xmin && q.x <= xmax && q.y >= ymin && q.y <= ymax) {
+          const px = (p.x - xmin) * size / w;
+          const py = (p.y - ymin) * size / h;
+          const qx = (q.x - xmin) * size / w;
+          const qy = (q.y - ymin) * size / h;
+          ctx.moveTo(px, py);
+          ctx.lineTo(qx, qy);
+        }
+      }
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // draw preview rectangle if any
+      if (previewRect) {
+        ctx.strokeStyle = 'red';
+        ctx.setLineDash([4,4]);
+        ctx.strokeRect(...previewRect);
+        ctx.setLineDash([]);
+      }
+    }
+
+    // controls
+    const depthInput = document.getElementById('depthRange');
+    const depthValue = document.getElementById('depthValue');
+    depthInput.addEventListener('input', () => {
+      depth = +depthInput.value;
+      depthValue.textContent = depth;
+      generateBase();
+      drawCurve();
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      viewRect = { xmin:0, xmax:size, ymin:0, ymax:size };
+      drawCurve();
+    });
+
+    // zoom handling
+    let isDragging = false;
+    let dragStart = { x:0, y:0 };
+
+    canvas.addEventListener('mousedown', e => {
+      isDragging = true;
+      dragStart.x = e.offsetX;
+      dragStart.y = e.offsetY;
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      const dx = e.offsetX - dragStart.x;
+      const dy = e.offsetY - dragStart.y;
+      const half = Math.max(Math.abs(dx), Math.abs(dy));
+      const x1 = dragStart.x - half;
+      const y1 = dragStart.y - half;
+      const rect = [
+        x1, y1,
+        2*half, 2*half
+      ];
+      drawCurve(rect);
+    });
+    canvas.addEventListener('mouseup', e => {
+      if (!isDragging) return;
+      isDragging = false;
+      const dx = e.offsetX - dragStart.x;
+      const dy = e.offsetY - dragStart.y;
+      const half = Math.max(Math.abs(dx), Math.abs(dy));
+      if (half < 5) { drawCurve(); return; }
+      // compute new viewRect in base coords
+      const { xmin, xmax, ymin, ymax } = viewRect;
+      const vw = xmax - xmin, vh = ymax - ymin;
+      const x1c = dragStart.x - half, y1c = dragStart.y - half;
+      const x2c = dragStart.x + half, y2c = dragStart.y + half;
+      viewRect = {
+        xmin: xmin + x1c / size * vw,
+        xmax: xmin + x2c / size * vw,
+        ymin: ymin + y1c / size * vh,
+        ymax: ymin + y2c / size * vh
+      };
+      drawCurve();
+    });
+
+    // init
+    generateBase();
+    drawCurve();
+  </script>
+
+</body>
+</html>
