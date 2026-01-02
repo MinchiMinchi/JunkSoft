@@ -1,0 +1,10 @@
+<h1>Junk Soft</h1>
+
+
+<ul>
+  <li><a href="./chase_mouse.html">ネズミがマウスカーソルを追いかける（JavaScript）</a></li>
+  <li><a href="./xeyes.html">目玉がウィンドウ内のマウスカーソルを追いかける（JavaScript）</a></li>
+  <li><a href="./lifegame.html">ライフゲーム（JavaScript）</a></li>
+  <li><a href="./simpleDraw.html">なんちゃってドローツール（JavaScript）</a></li>
+  <li><a href="./koch_curve.html">コッホ曲線を描画．矩形で拡大表示できます（JavaScript）</a></li>
+</ul>
